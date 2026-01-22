@@ -1,0 +1,26 @@
+{
+  "usuarios": {
+    "1": {
+      "email": "admin@test.com",
+      "name": "Admin",
+      "password": "123456",
+      "tareas": [
+        { "id": 1, "texto": "Tarea de admin", "estado": "pendiente" },
+        { "id": 2, "texto": "hola", "estado": "completada" },
+        { "id": 3, "texto": "adios", "estado": "completada" },
+        { "id": 4, "texto": "assa", "estado": "pendiente" },
+        { "id": 5, "texto": "s", "estado": "pendiente" },
+        { "id": 6, "texto": "s", "estado": "pendiente" },
+        { "id": 7, "texto": "a", "estado": "pendiente" }
+      ]
+    },
+    "2": {
+      "email": "usuario@test.com",
+      "name": "Usuario",
+      "password": "123",
+      "tareas": [
+        { "id": 1, "texto": "Tarea de usuario", "estado": "completada" }
+      ]
+    }
+  }
+}

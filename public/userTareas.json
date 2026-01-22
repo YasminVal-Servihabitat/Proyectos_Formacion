@@ -1,0 +1,9 @@
+{
+  "tareas": [
+    { "id": 1, "texto": "Hacer cama", "estado": "enProceso" },
+    { "id": 2, "texto": "hola", "estado": "pendiente" },
+    { "id": 4, "texto": "No", "estado": "completada" },
+    { "id": 7, "texto": "hola", "estado": "completada" },
+    { "id": 5, "texto": "hola2", "estado": "pendiente" }
+  ]
+}
