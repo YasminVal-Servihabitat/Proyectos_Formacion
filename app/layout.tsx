@@ -15,7 +15,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider>
             <Barra>{children}</Barra>
-          </AuthProvider>
+          </AuthProvider>0.......................................
           <TemaBoton/>
         </ThemeProvider>
       </body>
