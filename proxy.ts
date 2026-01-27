@@ -8,12 +8,12 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
   
-  if (pathname.startsWith('/dashboard')||pathname.startsWith('/tascas')||pathname.startsWith('/about')) {
+ /*  if (pathname.startsWith('/dashboard')||pathname.startsWith('/tascas')||pathname.startsWith('/about')) {
     const token = request.cookies.get('next-auth.session-token'); 
     if (!token) {
       return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
-  }
+  } */
 
   return NextResponse.next();
 }
