@@ -2,6 +2,10 @@ import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import fs from 'fs'
 import path from 'path'
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 
 function obtenerUsuarios() {
   const filePath = path.join(process.cwd(), 'userTareas.json')

@@ -1,30 +1,30 @@
-"use client"
-import { signIn } from "next-auth/react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+"use client";
+import { signIn } from "next-auth/react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function IniciarSesion() {
-  const [correo, setCorreo] = useState("")
-  const [clave, setClave] = useState("")
-  const [error, setError] = useState("")
-  const router = useRouter()
+  const [correo, setCorreo] = useState("");
+  const [clave, setClave] = useState("");
+  const [error, setError] = useState("");
+  const router = useRouter();
 
   const manejarEnvio = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    
+    e.preventDefault();
+    setError("");
+
     const resultado = await signIn("credentials", {
       correo,
       clave,
-      redirect: false
-    })
+      redirect: false,
+    });
 
     if (resultado?.error) {
-      setError("Correo o contraseña incorrectos")
+      setError("Correo o contraseña incorrectos");
     } else {
-      router.push("/dashboard")
+      router.push("/dashboard");
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black">
@@ -74,5 +74,5 @@ export default function IniciarSesion() {
         </div>
       </div>
     </div>
-  )
+  );
 }
