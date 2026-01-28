@@ -11,7 +11,7 @@ export async function proxy(request: NextRequest) {
   
   if (pathname.startsWith('/dashboard') || pathname.startsWith('/tascas') || pathname.startsWith('/about')) {
     if (!token) {
-      return NextResponse.redirect(new URL('/login', request.url));
+      return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
   }
   
