@@ -51,6 +51,14 @@ export const authOptions = {
   pages: {
     signIn: '/auth/signin'
   },
+  callbacks: {
+    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      else if (new URL(url).origin === baseUrl) return url
+      return baseUrl + "/dashboard"
+    }
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 }
 const handler = NextAuth(authOptions)
 
