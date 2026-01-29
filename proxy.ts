@@ -1,5 +1,6 @@
 import { getToken } from "next-auth/jwt"
 import { NextRequest, NextResponse } from "next/server"
+export { default } from "next-auth/middleware"
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -19,5 +20,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/dashboard/:path*', '/tascas/:path*', '/about/:path*']
+  matcher: ['/((?!favicon.ico).*)'],
 }
