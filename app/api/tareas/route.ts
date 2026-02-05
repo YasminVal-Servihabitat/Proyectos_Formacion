@@ -1,25 +1,37 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
+
 import { getServerSession } from "next-auth";
 import { authOptions } from "../auth/[...nextauth]/route";
+import { put, list } from "@vercel/blob";
+const archivo = "userTareas.json";
 
-const Archivo = "userTareas.json";
-
-function leerDatos() {
-  let leer = fs.readFileSync(Archivo, "utf8");
-  let datos = JSON.parse(leer);
-  return datos;
+async function leerDatos() {
+  try {
+    const { blobs } = await list({ prefix: archivo });
+    if (blobs.length === 0) {
+      return { usuarios: {} };
+    }
+    const respuesta = await fetch(blobs[0].downloadUrl);
+     // Te descarga el contenido
+    const datos = await respuesta.json();
+    return datos;
+  } catch {
+    return { usuarios: {} };
+  }
 }
 
-function escribirTareas(datos: any) {
-  fs.writeFileSync(Archivo, JSON.stringify(datos));
+async function  escribirTareas(datos: any) {
+  const blob = await put(archivo, JSON.stringify(datos), {
+    access: "public",
+    allowOverwrite: true
+  });
 }
 
 async function obtenerUsuarioId() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return null;
-  
-  const datos = leerDatos();
+
+  const datos = await leerDatos();
   for (let id in datos.usuarios) {
     if (datos.usuarios[id].email === session.user.email) {
       return id;
@@ -40,13 +52,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Tarea vacía!" }, { status: 400 });
     }
 
-    const datos = leerDatos();
+    const datos = await leerDatos();
     if (!datos.usuarios[userId]) {
       datos.usuarios[userId] = { tareas: [] };
     }
 
     const tareasUsuario = datos.usuarios[userId].tareas;
-    const nuevoId = tareasUsuario.length > 0 ? Math.max(...tareasUsuario.map((t: any) => t.id)) + 1 : 1;
+    const nuevoId =
+      tareasUsuario.length > 0
+        ? Math.max(...tareasUsuario.map((t: any) => t.id)) + 1
+        : 1;
     const nuevaTarea = {
       id: nuevoId,
       texto: texto.trim(),
@@ -54,7 +69,7 @@ export async function POST(request: Request) {
     };
 
     datos.usuarios[userId].tareas.push(nuevaTarea);
-    escribirTareas(datos);
+    await escribirTareas(datos);
 
     return NextResponse.json({ success: true, tarea: nuevaTarea });
   } catch (error) {
@@ -72,7 +87,7 @@ export async function GET() {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
 
-    const datos = leerDatos();
+    const datos = await leerDatos();
     const tareasUsuario = datos.usuarios[userId]?.tareas || [];
     return NextResponse.json(tareasUsuario);
   } catch (error) {
@@ -91,10 +106,13 @@ export async function PUT(request: Request) {
     }
 
     const { id, estado, texto } = await request.json();
-    const datos = leerDatos();
-    
+    const datos = await leerDatos();
+
     if (!datos.usuarios[userId]) {
-      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Usuario no encontrado" },
+        { status: 404 }
+      );
     }
 
     const nuevasTareas = datos.usuarios[userId].tareas.map((tarea: any) => {
@@ -106,9 +124,9 @@ export async function PUT(request: Request) {
       }
       return tarea;
     });
-    
+
     datos.usuarios[userId].tareas = nuevasTareas;
-    escribirTareas(datos);
+    await escribirTareas(datos);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
@@ -126,15 +144,20 @@ export async function DELETE(request: Request) {
     }
 
     const { id } = await request.json();
-    const datos = leerDatos();
-    
+    const datos = await leerDatos();
+
     if (!datos.usuarios[userId]) {
-      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Usuario no encontrado" },
+        { status: 404 }
+      );
     }
 
-    const nuevasTareas = datos.usuarios[userId].tareas.filter((tarea: any) => tarea.id !== id);
+    const nuevasTareas = datos.usuarios[userId].tareas.filter(
+      (tarea: any) => tarea.id !== id
+    );
     datos.usuarios[userId].tareas = nuevasTareas;
-    escribirTareas(datos);
+    await escribirTareas(datos);
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json(
