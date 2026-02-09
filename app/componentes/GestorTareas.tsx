@@ -9,33 +9,33 @@ export default function GestorTareas() {
   const [editandoTarea, setEditandotarea] = useState<number | undefined>(
     undefined
   );
+  const [cargando, setCargando] = useState(false);
 
   useEffect(() => {
     obtenerTareas();
   }, []);
 
   //Cada vez que añadas/edites/elimines/cambies estado de una tarea, se descargará el blob actualizado y verás los cambios inmediatamente.
-  function obtenerTareas() {
-    fetch("/api/tareas", { cache: 'no-store' }) // siempre descarga el blob actualizado
-      .then(function (datosServidor) {
-        return datosServidor.json();
-      })
-      .then(function (datos) {
-        setTareas(datos);
-      });
+  async function obtenerTareas() {
+    const datosServidor = await fetch("/api/tareas", { cache: 'no-store' });
+    const datos = await datosServidor.json();
+    setTareas(datos);
   }
 
-  function añadirTarea(e: FormEvent<HTMLFormElement>) {
+  async function añadirTarea(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (input.trim()) {
-      fetch("/api/tareas", {
+      setCargando(true);
+      const response = await fetch("/api/tareas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ texto: input.trim() }),
-      }).then(() => {
-        obtenerTareas();
-        setInput("");
       });
+      if (response.ok) {
+        await obtenerTareas();
+        setInput("");
+      }
+      setCargando(false);
     }
   }
 
@@ -121,9 +121,10 @@ export default function GestorTareas() {
         ) : (
           <button
             type="submit"
-            className="bg-gray-400 rounded-md w-28 h-8 border-2 border-blacks mt-10"
+            disabled={cargando}
+            className="bg-gray-400 rounded-md w-28 h-8 border-2 border-blacks mt-10 disabled:opacity-50"
           >
-            +
+            {cargando ? "⏳" : "+"}
           </button>
         )}
       </form>
