@@ -1,5 +1,4 @@
 "use client";
-import { redirect } from "next/navigation";
 import { useState, useEffect, FormEvent } from "react";
 import Link from "next/link";
 
@@ -15,8 +14,9 @@ export default function GestorTareas() {
     obtenerTareas();
   }, []);
 
+  //Cada vez que añadas/edites/elimines/cambies estado de una tarea, se descargará el blob actualizado y verás los cambios inmediatamente.
   function obtenerTareas() {
-    fetch("/api/tareas")
+    fetch("/api/tareas", { cache: 'no-store' }) // siempre descarga el blob actualizado
       .then(function (datosServidor) {
         return datosServidor.json();
       })
@@ -44,10 +44,13 @@ export default function GestorTareas() {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: id }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        obtenerTareas();
+      }
     });
-
-    const nuevasTareas = tareas.filter((tarea) => tarea.id !== id);
-    setTareas(nuevasTareas);
   }
 
   function ponerEstado(id: number, estado: string) {
@@ -55,14 +58,7 @@ export default function GestorTareas() {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: id, estado: estado }),
-    });
-    const nuevasTareas: any[] = [];
-    tareas.map((tarea: any) => {
-      tarea.id === id
-        ? nuevasTareas.push({ ...tarea, estado: estado })
-        : nuevasTareas.push(tarea);
-    });
-    setTareas(nuevasTareas);
+    }).then(() => obtenerTareas());
   }
 
   function iniciarEdicion(id: number, texto: string) {
@@ -76,14 +72,11 @@ export default function GestorTareas() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: editandoTarea, texto: input.trim() }),
+      }).then(() => {
+        obtenerTareas();
+        setInput("");
+        setEditandotarea(undefined);
       });
-
-      const nuevasTareas = tareas.map((tarea) =>
-        tarea.id === editandoTarea ? { ...tarea, texto: input.trim() } : tarea
-      );
-      setTareas(nuevasTareas);
-      setInput("");
-      setEditandotarea(undefined);
     }
   }
 

@@ -1,9 +1,29 @@
 {
-  "tareas": [
-    { "id": 1, "texto": "Hacer cama", "estado": "enProceso" },
-    { "id": 2, "texto": "hola", "estado": "pendiente" },
-    { "id": 4, "texto": "No", "estado": "completada" },
-    { "id": 7, "texto": "hola", "estado": "completada" },
-    { "id": 5, "texto": "hola2", "estado": "pendiente" }
-  ]
+  "usuarios": {
+    "1": {
+      "email": "admin@test.com",
+      "name": "Admin",
+      "password": "123456",
+      "tareas": [
+        { "id": 1, "texto": "Tarea de admin", "estado": "pendiente" },
+        { "id": 2, "texto": "hola", "estado": "completada" },
+        { "id": 3, "texto": "adios", "estado": "completada" },
+        { "id": 4, "texto": "assa", "estado": "pendiente" },
+        { "id": 5, "texto": "s", "estado": "pendiente" },
+        { "id": 8, "texto": "dsadas", "estado": "pendiente" },
+        { "id": 9, "texto": "23434", "estado": "pendiente" },
+        { "id": 10, "texto": "adios", "estado": "pendiente" },
+        { "id": 14, "texto": "99999999999999", "estado": "completada" },
+        { "id": 15, "texto": "fwadfa", "estado": "pendiente" }
+      ]
+    },
+    "2": {
+      "email": "usuario@test.com",
+      "name": "Usuario",
+      "password": "123",
+      "tareas": [
+        { "id": 1, "texto": "Tarea de usuario", "estado": "completada" }
+      ]
+    }
+  }
 }

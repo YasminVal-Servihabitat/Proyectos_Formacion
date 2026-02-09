@@ -1,26 +1,43 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import fs from 'fs'
-import path from 'path'
+import { list } from "@vercel/blob"
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+const archivo = "userTareas.json";
 
-function obtenerUsuarios() {
-  const filePath = path.join(process.cwd(), 'userTareas.json')
-  const fileContent = fs.readFileSync(filePath, 'utf8')
-  const datos = JSON.parse(fileContent)
-  
-  return Object.entries(datos.usuarios).map(([id, usuario]: [string, any]) => {
-    return {
-      id: id,
+async function obtenerUsuarios() {
+  try {
+    const { blobs } = await list({ prefix: archivo });
+    if (blobs.length === 0) {
+      console.error('No se encontró el archivo userTareas.json en Blob Storage');
+      return [];
+    }
+    
+    const respuesta = await fetch(blobs[0].downloadUrl);
+    if (!respuesta.ok) {
+      console.error('Error al descargar blob:', respuesta.status);
+      return [];
+    }
+    
+    const texto = await respuesta.text();
+    const datos = JSON.parse(texto);
+    
+    if (!datos?.usuarios) return [];
+    
+    return Object.entries(datos.usuarios).map(([id, usuario]: [string, any]) => ({
+      id,
       correo: usuario.email,
       nombre: usuario.name,
       clave: usuario.password
-    }
-  })
+    }));
+  } catch (error) {
+    console.error('Error al obtener usuarios:', error);
+    return [];
+  }
 }
+
 
 export const authOptions = {
   providers: [
@@ -31,7 +48,7 @@ export const authOptions = {
         clave: { label: "Contraseña", type: "password" }
       },
       async authorize(credentials) {
-        const usuariosValidos = obtenerUsuarios()
+        const usuariosValidos = await obtenerUsuarios()
         
         const usuario = usuariosValidos.find(u => 
           u.correo === credentials?.correo && u.clave === credentials?.clave

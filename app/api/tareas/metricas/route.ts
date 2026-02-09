@@ -1,14 +1,22 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import { put, list } from "@vercel/blob";
+const archivo = "userTareas.json";
 
-const Archivo = "userTareas.json";
-
-function leerDatos() {
-  let leer = fs.readFileSync(Archivo, "utf8");
-  let datos = JSON.parse(leer);
-  return datos;
+async function leerDatos() {
+  try {
+    const { blobs } = await list({ prefix: archivo });
+    if (blobs.length === 0) {
+      return { usuarios: {} };
+    }
+    const respuesta = await fetch(blobs[0].downloadUrl);
+     // Te descarga el contenido
+    const datos = await respuesta.json();
+    return datos;
+  } catch {
+    return { usuarios: {} };
+  }
 }
 
 interface Tarea {
@@ -20,7 +28,7 @@ async function obtenerUsuarioId() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) return null;
   
-  const datos = leerDatos();
+  const datos = await leerDatos();
   for (let id in datos.usuarios) {
     if (datos.usuarios[id].email === session.user.email) {
       return id;
@@ -36,9 +44,8 @@ export async function GET() {
     if (!userId || userId ==null) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }else{
-const userIdInt=parseInt(userId);
-      const datos = leerDatos();
-      const tareasUsuario = datos.usuarios[userIdInt]?.tareas || [];
+      const datos = await leerDatos();
+      const tareasUsuario = datos.usuarios[userId]?.tareas || [];
       
       const completadas = tareasUsuario.filter((tarea: Tarea) => tarea.estado === "completada").length;
       const enProceso = tareasUsuario.filter((tarea: Tarea) => tarea.estado === "enProceso").length;
