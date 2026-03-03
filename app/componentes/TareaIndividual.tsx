@@ -21,13 +21,13 @@ export default function TareaIndividual({ tareas }: { tareas: { id: number } }) 
 
   async function guardarEdicion() {
     if (textoEdicion.trim()) {
-      await fetch("/api/tareas", {
+      await fetch("/api/tareas/" + tarea.id, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: tarea.id, texto: textoEdicion.trim() }),
       });
 
-      setTarea({ ...tarea, texto: textoEdicion.trim() });
+      setTarea({ ...tarea, titulo: textoEdicion.trim(), descripcion: textoEdicion.trim() });
       setEditando(false);
       setTextoEdicion("");
     }
@@ -46,13 +46,13 @@ export default function TareaIndividual({ tareas }: { tareas: { id: number } }) 
     window.location.href = "/tascas";
   }
 
-  function cambiarEstado(id: number, estado: string) {
-    fetch("/api/tareas", {
+  async function cambiarEstado(id: number, estado: string) {
+    await fetch("/api/tareas/" + id, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: id, estado: estado }),
     });
-    cargarTarea();
+    setTarea({ ...tarea, estado: estado });
   }
 
   useEffect(() => {
@@ -72,7 +72,7 @@ export default function TareaIndividual({ tareas }: { tareas: { id: number } }) 
       </p>
       <br />
       <p className="text-2xl">
-        <strong>Descripción:</strong> {tarea.texto}
+        <strong>Descripción:</strong> {tarea.descripcion || tarea.titulo || tarea.texto}
       </p>
       <br />
       <p className="text-2xl">
@@ -101,7 +101,7 @@ export default function TareaIndividual({ tareas }: { tareas: { id: number } }) 
       ) : (
         <div>
           <button
-            onClick={() => iniciarEdicion(tarea.id, tarea.texto)}
+            onClick={() => iniciarEdicion(tarea.id, tarea.descripcion || tarea.titulo || tarea.texto)}
             className="text-blue-500 hover:text-blue-700 font-bold"
           >
             Editar

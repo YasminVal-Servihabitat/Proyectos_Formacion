@@ -4,7 +4,9 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 interface Tarea {
-  texto: string;
+  titulo?: string;
+  descripcion?: string;
+  texto?: string;
 }
 
 interface Metricas {
@@ -73,7 +75,7 @@ export default function GestorDashboard() {
       </div>
       <div className="bg-gradient-to-r from-blue-500 to-indigo-600 mt-6 p-6 rounded-lg shadow-xl text-center" >
         <h2 className="text-2xl font-bold text-white">Última Tarea</h2>
-        <h3 className="text-lg mt-2 text-gray-100">{metricas.ultimaTarea?.texto || "No hay tareas"}</h3>
+        <h3 className="text-lg mt-2 text-gray-100">{metricas.ultimaTarea?.descripcion || metricas.ultimaTarea?.titulo || metricas.ultimaTarea?.texto || "No hay tareas"}</h3>
       </div>
       
     </div>

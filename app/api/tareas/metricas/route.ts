@@ -1,23 +1,10 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../auth/[...nextauth]/route";
-import { put, list } from "@vercel/blob";
-const archivo = "userTareas.json";
+import { Redis } from "@upstash/redis";
 
-async function leerDatos() {
-  try {
-    const { blobs } = await list({ prefix: archivo });
-    if (blobs.length === 0) {
-      return { usuarios: {} };
-    }
-    const respuesta = await fetch(blobs[0].downloadUrl);
-     // Te descarga el contenido
-    const datos = await respuesta.json();
-    return datos;
-  } catch {
-    return { usuarios: {} };
-  }
-}
+const redis = Redis.fromEnv();
+
 
 interface Tarea {
   id: Number;
@@ -26,15 +13,8 @@ interface Tarea {
 }
 async function obtenerUsuarioId() {
   const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return null;
-  
-  const datos = await leerDatos();
-  for (let id in datos.usuarios) {
-    if (datos.usuarios[id].email === session.user.email) {
-      return id;
-    }
-  }
-  return null;
+  if (!session?.user?.id) return null;
+  return session.user.id;
 }
 export async function GET() {
   try {
@@ -44,14 +24,19 @@ export async function GET() {
     if (!userId || userId ==null) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }else{
-      const datos = await leerDatos();
-      const tareasUsuario = datos.usuarios[userId]?.tareas || [];
+      const tascaIds = await redis.get(`user:${userId}:tascas`) as string[] || [];
+      const tareas = [];
       
-      const completadas = tareasUsuario.filter((tarea: Tarea) => tarea.estado === "completada").length;
-      const enProceso = tareasUsuario.filter((tarea: Tarea) => tarea.estado === "enProceso").length;
-      const pendientes = tareasUsuario.filter((tarea: Tarea) => tarea.estado === "pendiente").length;
-      const ultimaTarea = tareasUsuario[tareasUsuario.length - 1] || null;
-      const total = tareasUsuario.length;
+      for (const tascaId of tascaIds) {
+        const tarea = await redis.get(`tasca:${tascaId}`);
+        if (tarea) tareas.push(tarea);
+      }
+      
+      const completadas = tareas.filter((tarea: any) => tarea.estado === "completada").length;
+      const enProceso = tareas.filter((tarea: any) => tarea.estado === "enProceso").length;
+      const pendientes = tareas.filter((tarea: any) => tarea.estado === "pendiente").length;
+      const ultimaTarea = tareas[tareas.length - 1] || null;
+      const total = tareas.length;
       return NextResponse.json({
         total,
         completadas,

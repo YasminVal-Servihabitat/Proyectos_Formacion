@@ -1,37 +1,28 @@
 import NextAuth from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
-import { list } from "@vercel/blob"
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-const archivo = "userTareas.json";
+import { migracion, redis } from "@/lib/migracion";
 
 async function obtenerUsuarios() {
+  await migracion();
   try {
-    const { blobs } = await list({ prefix: archivo });
-    if (blobs.length === 0) {
-      console.error('No se encontró el archivo userTareas.json en Blob Storage');
-      return [];
+    const keys = await redis.keys('user:*');
+    const usuarios = [];
+    
+    for (const key of keys) {
+      if (!key.includes(':tascas')) {
+        const usuario = await redis.get(key) as any;
+        if (usuario) {
+          usuarios.push({
+            id: usuario.id,
+            correo: usuario.email,
+            nombre: usuario.nombre,
+            clave: usuario.password
+          });
+        }
+      }
     }
     
-    const respuesta = await fetch(blobs[0].downloadUrl);
-    if (!respuesta.ok) {
-      console.error('Error al descargar blob:', respuesta.status);
-      return [];
-    }
-    
-    const texto = await respuesta.text();
-    const datos = JSON.parse(texto);
-    
-    if (!datos?.usuarios) return [];
-    
-    return Object.entries(datos.usuarios).map(([id, usuario]: [string, any]) => ({
-      id,
-      correo: usuario.email,
-      nombre: usuario.name,
-      clave: usuario.password
-    }));
+    return usuarios;
   } catch (error) {
     console.error('Error al obtener usuarios:', error);
     return [];
@@ -48,11 +39,14 @@ export const authOptions = {
         clave: { label: "Contraseña", type: "password" }
       },
       async authorize(credentials) {
+        console.log('Credenciales recibidas:', credentials);
         const usuariosValidos = await obtenerUsuarios()
+        console.log('Usuarios válidos:', usuariosValidos);
         
         const usuario = usuariosValidos.find(u => 
           u.correo === credentials?.correo && u.clave === credentials?.clave
         )
+        console.log('Usuario encontrado:', usuario);
         
         if (usuario) {
           return {
@@ -73,6 +67,18 @@ export const authOptions = {
     signIn: '/auth/signin'
   },
   callbacks: {
+    async jwt({ token, user }: any) {
+      if (user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+    async session({ session, token }: any) {
+      if (session.user) {
+        session.user.id = token.id as string;
+      }
+      return session;
+    },
     async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
       if (url.startsWith("/")) return `${baseUrl}${url}`
       else if (new URL(url).origin === baseUrl) return url

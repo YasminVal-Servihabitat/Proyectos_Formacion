@@ -19,11 +19,16 @@ export default function GestorTareas() {
   async function obtenerTareas() {
     const datosServidor = await fetch("/api/tareas", { cache: 'no-store' });
     const datos = await datosServidor.json();
+    console.log('Tareas recibidas:', datos);
     setTareas(datos);
   }
 
   async function añadirTarea(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (editandoTarea) {
+      guardarEdicion();
+      return;
+    }
     if (input.trim()) {
       setCargando(true);
       const response = await fetch("/api/tareas", {
@@ -32,8 +37,12 @@ export default function GestorTareas() {
         body: JSON.stringify({ texto: input.trim() }),
       });
       if (response.ok) {
+        await new Promise(resolve => setTimeout(resolve, 500));
         await obtenerTareas();
         setInput("");
+      } else if (response.status === 401) {
+        alert('Sesión expirada. Vuelve a iniciar sesión.');
+        window.location.href = '/auth/signin';
       }
       setCargando(false);
     }
@@ -177,7 +186,7 @@ export default function GestorTareas() {
                   key={tarea.id}
                   className={`${colorTarea} flex justify-between items-center`}
                 >
-                  <span>{tarea.id}. {tarea.texto}</span>
+                  <span>{tarea.id}. {tarea.descripcion || tarea.titulo || tarea.texto}</span>
                   <div className="flex gap-2">
                     {tarea.estado !== "completada" ? (
                       <button
@@ -196,7 +205,7 @@ export default function GestorTareas() {
                       ×
                     </button>
                     <button
-                      onClick={() => iniciarEdicion(tarea.id, tarea.texto)}
+                      onClick={() => iniciarEdicion(tarea.id, tarea.descripcion || tarea.titulo || tarea.texto)}
                       className="text-blue-500 hover:text-blue-700 font-bold"
                     >
                       ✎

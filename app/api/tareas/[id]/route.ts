@@ -1,69 +1,67 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../auth/[...nextauth]/route";
+import { Redis } from "@upstash/redis";
 
-const fe = require("fs");
-const Archivo = "userTareas.json";
+const redis = Redis.fromEnv();
 
-function leerDatos() {
-  let leer = fs.readFileSync(Archivo, "utf8");
-  let datos = JSON.parse(leer);
-  return datos;
-}
-function escribirTareas(datos: any) {
-  fs.writeFileSync(Archivo, JSON.stringify(datos));
+async function obtenerUsuarioId() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return null;
+  return session.user.id;
 }
 
 
-export async function GET(request: any, { params }: any) {
-  const { id } = await params;
-  const datos = leerDatos();
-  
 
-  let tarea = null;
-  for (const userId in datos.usuarios) {
-    tarea = datos.usuarios[userId].tareas.find((t: any) => t.id == Number(id));
-    if (tarea) break;
-  }
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const userId = await obtenerUsuarioId();
+    if (!userId) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
 
-  if (!tarea) {
-    return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
+    const { id } = await params;
+    console.log('Buscando tarea con ID:', id);
+
+    const tarea = await redis.get(`tasca:${id}`) as any;
+    
+    console.log('Tarea encontrada:', tarea);
+    
+    if (!tarea || tarea.user_id !== userId) {
+      return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
+    }
+    return NextResponse.json(tarea);
+  } catch (error) {
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
-  return NextResponse.json(tarea);
 }
 
 
 
 export async function PUT(request: Request) {
   try {
+    const userId = await obtenerUsuarioId();
+    if (!userId) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
     const { id, estado, texto } = await request.json();
-    const datos = leerDatos();
-    
-    // Buscar y actualizar la tarea en todos los usuarios
-    let tareaEncontrada = false;
-    for (const userId in datos.usuarios) {
-      const nuevasTareas = datos.usuarios[userId].tareas.map((tarea: any) => {
-        if (tarea.id === id) {
-          tareaEncontrada = true;
-          const tareaActualizada = { ...tarea };
-          if (estado !== undefined) tareaActualizada.estado = estado;
-          if (texto !== undefined) tareaActualizada.texto = texto;
-          return tareaActualizada;
-        }
-        return tarea;
-      });
-      datos.usuarios[userId].tareas = nuevasTareas;
+    const tarea = await redis.get(`tasca:${id}`) as any;
+
+    if (tarea && tarea.user_id === userId) {
+      if (estado !== undefined) tarea.estado = estado;
+      if (texto !== undefined) {
+        tarea.titulo = texto;
+        tarea.descripcion = texto;
+      }
+      await redis.set(`tasca:${id}`, tarea);
     }
-    
-    if (!tareaEncontrada) {
-      return NextResponse.json({ error: "Tarea no encontrada" }, { status: 404 });
-    }
-    
-    escribirTareas(datos);
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
   }
 }
+
+
+

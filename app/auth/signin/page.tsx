@@ -14,8 +14,8 @@ export default function IniciarSesion() {
     setError("");
 
     const resultado = await signIn("credentials", {
-      correo,
-      clave,
+      correo: correo,
+      clave: clave,
       redirect: false,
     });
 

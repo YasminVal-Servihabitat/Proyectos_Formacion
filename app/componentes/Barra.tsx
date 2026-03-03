@@ -11,9 +11,11 @@ export default function Barra({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
+  if (!mounted) return <>{children}</>;
+
   return (
     <>
-      {mounted && pathname !== "/auth/signin" && <SideBar />}
+      {pathname !== "/auth/signin" && <SideBar />}
       {children}
     </>
   );
